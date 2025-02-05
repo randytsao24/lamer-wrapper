@@ -1,7 +1,14 @@
 import { FastifyInstance } from "fastify";
 
+import { processLLMOutput } from "./utils";
+
 interface PredictionRequest {
   prompt: string;
+  thinking?: boolean;
+}
+
+interface PredictionResponse {
+  answer: string;
 }
 
 export async function routes(server: FastifyInstance) {
@@ -9,21 +16,33 @@ export async function routes(server: FastifyInstance) {
     return "poooooong!\n";
   });
 
-  server.post<{ Body: PredictionRequest }>("/pred", async (request, reply) => {
-    try {
-      const { prompt } = request.body;
-      const model = await request.server.lmsClient.llm.get("local-model");
-      const responseParams = [
-        { role: "system", content: "Answer the following question." },
-        { role: "user", content: prompt },
-      ];
+  server.post<{ Body: PredictionRequest }>(
+    "/pred",
+    async (request, reply): Promise<PredictionResponse> => {
+      try {
+        const { prompt, thinking = false } = request.body;
+        const model = await request.server.lmsClient.llm.get("local-model");
+        const responseParams = [
+          {
+            role: "system",
+            content:
+              "Answer the following question and make sure the output is in Markdown.",
+          },
+          { role: "user", content: prompt },
+        ];
 
-      const { content } = await model.respond(responseParams);
-      console.log({ content });
-      return { answer: content };
-    } catch (error) {
-      request.log.error(error);
-      reply.status(500).send({ error: "Couldn't generate prediction!" });
+        const { content } = await model.respond(responseParams);
+        const processedContent = processLLMOutput(content, {
+          includeThinking: thinking,
+        });
+
+        return reply.type("text/markdown").send(processedContent.markdown);
+      } catch (error) {
+        request.log.error(error);
+        reply.status(500);
+
+        return { answer: "Couldn't generate prediction!" };
+      }
     }
-  });
+  );
 }
