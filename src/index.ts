@@ -1,6 +1,5 @@
 import fastify from "fastify";
 import { LMStudioClient } from "@lmstudio/sdk";
-import { marked } from "marked";
 
 import { routes } from "./routes";
 
@@ -25,11 +24,6 @@ const start = async () => {
     });
 
     server.decorate("lmsClient", lmsClient);
-
-    marked.setOptions({
-      breaks: true,
-      gfm: true,
-    });
 
     await server.register(routes);
     await server.listen({ port: PORT });
