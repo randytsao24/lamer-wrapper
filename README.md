@@ -1,7 +1,5 @@
 ## lamer
 
----
-
 A simple wrapper for the [LMStudio SDK](https://github.com/lmstudio-ai/lmstudio.js), so I can talk to an LLM running on my local machine from somewhere else. Kinda lame, right?
 
 ### Usage
